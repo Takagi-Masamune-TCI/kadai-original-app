@@ -100,4 +100,61 @@ class User extends Authenticatable
         return $this->belongsToMany(Record::class, 'record_favorites')
             ->withTimestamps();
     }
+
+    public function usingStores() {
+        $favoriteStoreIds = $this->favoriteStores()->pluck("stores.id")->toArray();
+
+        return Store::where("created_by", $this->id)
+            ->orWhereIn("id", $favoriteStoreIds);
+    }
+
+    public function isStoreFavorite(int $storeId)
+    {
+        return $this->favoriteStores()->where("store_id", $storeId)->exists();
+    }
+
+    public function favoriteStore(int $storeId)
+    {
+        if ($this->isStoreFavorite($storeId)) {
+            return false;
+        }
+
+        $this->favoriteStores()->attach($storeId);
+        return true;
+    }
+
+    public function unfavoriteStore(int $storeId)
+    {
+        if ($this->isStoreFavorite($storeId) == false) {
+            return false;
+        }
+
+        $this->favoriteStores()->detach($storeId);
+        return true;
+    }
+
+    public function isRecordFavorite(int $recordId)
+    {
+        return $this->favoriteRecords()->where("record_id", $recordId)->exists();
+    }
+
+    public function favoriteRecord(int $recordId)
+    {
+        if ($this->isRecordFavorite($recordId)) {
+            return false;
+        }
+
+        $this->favoriteRecords()->attach($recordId);
+        return true;
+    }
+
+    public function unfavoriteRecord(int $recordId)
+    {
+        if ($this->isRecordFavorite($recordId) == false) {
+            return false;
+        }
+
+        $this->favoriteRecords()->detach($recordId);
+        return true;
+    }
 }
