@@ -1,0 +1,124 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\PropDefinition;
+use App\Models\Store;
+use Illuminate\Http\Request;
+
+class PropDefinitionController extends Controller 
+{
+    use StoreMemberAccessor, IndexManager;
+
+    /**
+     * [POST] /prop_definitions
+     */
+    public function store(Request $request)
+    {
+        // # バリデーション
+        $this->validatePropDefinitionRequest($request);
+
+        // # 認証済みユーザーが作成する propDefinition として作成
+
+        // ## store へ追加可能か確認する
+        $storeId = $request->input("store_id");
+        $store = Store::find($storeId);
+
+        if ($this->canAccessToStore(\Auth::id(), $store) == false) {
+            return back()
+                ->with("Auth Fail", "この Store に対するレコードの作成権限がありません");
+        }
+
+        // ## index の更新処理を行う
+        $index = $request->input("index");
+        if (isset($index)) {
+            $this->reindexForInsertInto($store->propDefinitions(), $index);
+        } else {
+            $index = Store::max("index") + 1;
+        }
+
+        // ## propDefinition を作成
+        $name = $request->input("name");
+        $propDefinition = $request->user()->records()->create([
+            "name" => $name,
+            "index" => $index,
+            "store_id" => $store->id
+        ]);
+
+        return back();
+    }
+
+    /**
+     * [PUT] /prop_definitions/{id}
+     */
+    public function update(Request $request, $id)
+    {
+        // # バリデーション
+        $this->validateStoreRequest($request);
+        $request->validate([
+            "index" => "required"
+        ]);
+
+        // # 変更予定の値の取得
+        $propDefinition = PropDefinition::findOrFail($id);
+        $store = $propDefinition->store;
+        $name = $request->input("name");
+        $index = $request->input("index");
+
+        // # 値の変更
+        
+        // ## index の更新処理
+        if ($index != $propDefinition->index) {
+            // 並び替えにはその propDefinition へアクセスできる必要がある
+            if ($this->canAccess(\Auth::id(), $propDefinition) == false) {
+                return back()
+                    ->with("Auth Fail", "編集権限がありません");
+            }
+            $this->reindexForReplace($store->propDefinitions(), $propDefinition->index, $index);
+            $propDefinition->index = $index;
+        }
+
+        // ## propDefinition の保存
+        $propDefinition->save();
+
+        return back();
+    }
+
+    /**
+     * [DELETE] /prop_definitions/{id}
+     */
+    public function destroy(string $id)
+    {
+        $propDefinition = PropDefinition::findOrFail($id);
+        $store = $propDefinition->store;
+
+        // # 削除可能か確認（作成者のみ削除可能）
+        if ($propDefinition->created_by != \Auth::id()) {
+            return back()
+                ->with("Auth Fail", "削除権限がありません");
+        }
+
+        // # 他の propDefinition の index を変更
+        $this->reindexForRemoveFrom($store->propDefinitions(), $propDefinition->index);
+
+        // # propDefinition を削除
+        $propDefinition->delete();
+
+        return back();
+    }
+
+    private function validatePropDefinitionRequest(Request $request)
+    {
+        $request->validate([
+            "name" => "required|max:255",
+            "index" => "nullable|number"
+        ]);
+    }
+
+    private function canAccess(int $userId, PropDefinition $propDefinition)
+    {
+        
+        $store = $propDefinition->store()->first();
+        return $this->canAccessToStore($userId, $store);
+    }
+}

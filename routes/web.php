@@ -1,7 +1,14 @@
 <?php
 
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Models\PropDefinition;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\StoreController;
+use App\Http\Controllers\RecordController;
+use App\Http\Controllers\PropDefinitionController;
+use App\Http\Controllers\StoreFavoriteController;
+use App\Http\Controllers\RecordFavoriteController;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,14 +23,39 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => view('welcome'));
 
-Route::get('/dashboard', fn ()=> view('dashboard'))
+Route::get('/dashboard', [DashboardController::class, "index"])
     ->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+Route::group([["middleware" => "auth"]], function () {
+    // store へのリクエストをルーティング
+    Route::resource("stores", StoreController::class, ["only" => ["store", "show", "edit", "update", "destroy"]]);
+    
+    // store へのその他の操作をルーティング
+    Route::prefix("stores/{id}")->group(function () {
+        // store をお気に入りへ追加/削除
+        Route::post('favorite', [StoreFavoriteController::class, "store"]);
+        Route::delete('unfavorite', [StoreFavoriteController::class, "destroy"]);
+    });
+
+    // record へのリクエストをルーティング
+    Route::resource("stores", RecordController::class, ["only" => ["store", "edit", "update", "destroy"]]);
+
+    // record へのその他の操作をルーティング
+    Route::prefix("records/{id}")->group(function () {
+        // record をお気に入りへ追加/削除
+        Route::post('favorite', [RecordFavoriteController::class, "store"]);
+        Route::delete('unfavorite', [RecordFavoriteController::class, "destroy"]);
+    });
+
+    // propDefinition へのリクエストをルーティング
+    Route::resource("prop_definitions", PropDefinitionController::class, ["only" => ["store", "update", "destroy"]]);
 });
+
+// Route::middleware('auth')->group(function () {
+//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// });
 
 
 

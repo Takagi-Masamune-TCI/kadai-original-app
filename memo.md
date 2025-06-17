@@ -110,13 +110,63 @@ User >o--o< Post : "favorite"
             1. `sudo ./vendor/bin/sail artisan make:model RecordFavorite`
             2. [app/Models/RecordFavorite.php](app/Models/RecordFavorite.php)
     8. マイグレーションを実行する \
-        >`sudo ./vendor/bin/sail artisan migrate`
-6. Router を編集する
+        `sudo ./vendor/bin/sail artisan migrate`
+6. >Router を編集する
     [routes/web.php](routes/web.php)
-7. Controller を作成する
+    - `/` \
+        [GET] welcome / dashboard
+    - `/dashboard` \
+        [GET] dashboard
+    - `/stores` \
+        [POST] store.store \
+        - `/{id}` \
+            [GET] store.show \
+            [PUT] store.update \
+            [DELETE] store.destroy
+            - `/edit` \
+                [GET] store.edit
+            - `/favorite` \
+                [POST] store をお気に入りする
+            - `/unfavorite` \
+                [DELETE] store のお気に入りを外す
+    - [POST] /records
+        - [PUT,DELETE] /{id}
+            - [GET] /edit
+            - [PUSH] /favorite
+            - [DELETE] /unfavorite
+    - [PUSH] /prop_definitions
+        - [PUT,DELETE] /{id}
+
+7. >Controller を作成する
     1. ~~UserController を用意する~~
-    2. StoreController を用意する
-    3. RecordController を用意する
-    4. Controller を用意する
-    5. StoreController を用意する
+    2. StoreController を用意する\
+        `sudo ./vendor/bin/sail artisan make:controller StoreController`
+        - show
+        - store
+        - edit
+        - update
+        - destroy
+    3. RecordController を用意する\
+        `sudo ./vendor/bin/sail artisan make:controller RecordController`
+        - store
+        - edit
+        - update
+        - destroy
+    4. PropDefinitionController を用意する\
+        `sudo ./vendor/bin/sail artisan make:controller PropDefinitionController`
+        - store
+        - update
+        - destroy
+    5. StoreFavoriteController を用意する\
+        `sudo ./vendor/bin/sail artisan make:controller StoreFavoriteController`
+        - store
+        - destroy
+    6. RecordFavoriteController を用意する\
+        `sudo ./vendor/bin/sail artisan make:controller RecordFavoriteController`
+        - store
+        - destroy
+    7. DashboardController を用意する\
+        `sudo ./vendor/bin/sail artisan make:controller DashboardController`
+        - index
+        
 8. View を作成する
