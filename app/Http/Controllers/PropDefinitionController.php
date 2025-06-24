@@ -34,7 +34,7 @@ class PropDefinitionController extends Controller
         if (isset($index)) {
             $this->reindexForInsertInto($store->propDefinitions(), $index);
         } else {
-            $index = Store::max("index") + 1;
+            $index = PropDefinition::max("index") + 1;
         }
 
         // ## propDefinition を作成
@@ -111,7 +111,7 @@ class PropDefinitionController extends Controller
     {
         $request->validate([
             "name" => "required|max:255",
-            "index" => "nullable|number"
+            "index" => "nullable|numeric"
         ]);
     }
 

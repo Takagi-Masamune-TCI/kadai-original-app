@@ -3,40 +3,40 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 trait IndexManager
 {
     /**
      * $index の位置に要素を挿入するために、他の要素の index をずらす
-     * @param \Illuminate\Database\Eloquent\Builder $list
+     * @param Builder|HasMany $list
      * @param int $index
      * @return void
      */
-    protected function reindexForInsertInto(Builder $list, int $index) {
+    protected function reindexForInsertInto(Builder|HasMany $list, int $index) {
         $list->where("index", ">=", $index)
             ->increment("index");
     }
 
     /**
      * $index の位置から要素を削除するために、他の要素の index をずらす
-     * @param \Illuminate\Database\Eloquent\Builder $list
+     * @param Builder|HasMany $list
      * @param int $index
      * @return void
      */
-    protected function reindexForRemoveFrom(Builder $list, int $index) {
-        $list->records()
-            ->where("index", ">=", $index)
-            ->increment("index");
+    protected function reindexForRemoveFrom(Builder|HasMany $list, int $index) {
+        $list->where("index", ">=", $index)
+            ->decrement("index");
     }
 
     /**
      * $fromIndex の要素を $toIndex へ動かすために、他の要素の index をずらす
-     * @param \Illuminate\Database\Eloquent\Builder $list
+     * @param Builder|HasMany $list
      * @param int $fromIndex
      * @param int $toIndex
      * @return void
      */
-    protected function reindexForReplace(Builder $list, int $fromIndex, int $toIndex) {
+    protected function reindexForReplace(Builder|HasMany $list, int $fromIndex, int $toIndex) {
         if ($fromIndex < $toIndex) {
             // 動かす要素は右方向へ移動する
             $list->where("index", ">", $fromIndex)

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Store;
 use App\Models\Record;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class RecordController extends Controller
 {
@@ -16,7 +17,10 @@ class RecordController extends Controller
     public function store(Request $request) 
     {
         // # バリデーション
-        $this->validateStoreRequest($request);
+        $this->validateRecordRequest($request);
+        $request->validate([
+            "store_id" => "required"
+        ]);
 
         // # 認証済みユーザーが作成する record として作成
 
@@ -34,7 +38,7 @@ class RecordController extends Controller
         if (isset($index)) {
             $this->reindexForInsertInto($store->records(), $index);
         } else {
-            $index = Store::max("index") + 1;
+            $index = Record::max("index") + 1;
         }
 
         // ## record を作成
@@ -74,22 +78,29 @@ class RecordController extends Controller
     public function update(Request $request, string $id) 
     {
         // # バリデーション
-        $this->validateStoreRequest($request);
+        $this->validateRecordRequest($request);
         $request->validate([
-            "index" => "required"
+            "index" => "sometimes|numeric",
+            "prop_ids" => "sometimes",
+            "prop_values" => "sometimes",
+            "with_props" => "required|boolean"
         ]);
 
         // # 変更予定の値の取得
         $record = Record::findOrFail($id);
         $store = $record->store;
+        
         $index = $request->input("index");
-        $propIds = $request->input("propIds[]");
-        $values = $request->input("values[]");
+        $withProps = $request->input("with_props") == true;
+        $propIds = $request->input("prop_ids");
+        $propValues = $request->input("prop_values");
 
         // # 値の変更
-        
+        $isUpdated = false;
+
         // ## index の更新処理
-        if ($index != $record->index) {
+        Log::info("index: " . isset($index) . " " . $record->index . " -> " . $index);
+        if (isset($index) && $index != $record->index) {
             // 並び替えにはそのレコードへアクセスできる必要がある
             if ($this->canAccess(\Auth::id(), $record) == false) {
                 return back()
@@ -97,28 +108,59 @@ class RecordController extends Controller
             }
             $this->reindexForReplace($store->records(), $record->index, $index);
             $record->index = $index;
+            $isUpdated = true;
         }
 
         // ## record の保存
-        $record->save();
+        if ($isUpdated)
+            $record->save();
 
         // ## recordValue の保存
-        foreach ($propIds as $i => $propId) {
-            $value = $values[$i];
-            $isPropExisting = $record->props()->where("prop_id", $propId)->exists();
-            
-            if ($isPropExisting) {
-                // 既に存在していた場合、更新する
-                $record->props()->updateExistingPivot($propId, ["value" => $value]);
-            } else {
-                // 対象の prop とのピボットに値を作成する
-                $record->props()->attach($propId, ["value" => $value]);
+        if ($withProps) {
+            foreach ($propIds ?? [] as $i => $propId) {
+                $value = $propValues[$i];
+                $isPropExisting = $record->props()->where("prop_id", $propId)->exists();
+                
+                if ($isPropExisting) {
+                    // 既に存在していた場合、更新する
+                    $record->props()->updateExistingPivot($propId, ["value" => $value]);
+                } else {
+                    // 対象の prop とのピボットに値を作成する
+                    if (isset($value) == false) {
+                        // 更新するデータが無いためプロパティを作成しない
+                        continue;
+                    }
+                    $record->props()->attach($propId, ["value" => $value]);
+                }
             }
+        }
+
+        return redirect("/stores/$store->id");
+    }
+
+    /**
+     * [POST] /records/{id}/insert
+     */
+    public function insert(Request $request, string $id) 
+    {
+        // # 挿入先を取得
+        $request->validate([
+            "into_id" => "required|numeric"
+        ]);
+        $into = Record::findOrFail(intval($request->input("into_id")));
+
+        // # 挿入するレコードを取得
+        $record = Record::findOrFail(intval($id));
+
+        if ($record->id != $into->id) {
+            // # レコードを挿入先へ挿入
+            $this->reindexForReplace($record->store->records(), $record->index, $into->index);
+            $record->index = $into->index;
+            $record->save();
         }
 
         return back();
     }
-    
 
     /**
      * [DELETE] /records/{id}
@@ -146,7 +188,7 @@ class RecordController extends Controller
     private function validateRecordRequest(Request $request) 
     {
         $request->validate([
-            "index" => "nullable|number"
+            "index" => "nullable|numeric"
         ]);
     }
 

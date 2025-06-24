@@ -137,7 +137,7 @@ User >o--o< Post : "favorite"
     - [PUSH] /prop_definitions
         - [PUT,DELETE] /{id}
 
-7. >Controller を作成する
+7. Controller を作成する
     1. ~~UserController を用意する~~
     2. StoreController を用意する\
         `sudo ./vendor/bin/sail artisan make:controller StoreController`
@@ -169,4 +169,56 @@ User >o--o< Post : "favorite"
         `sudo ./vendor/bin/sail artisan make:controller DashboardController`
         - index
         
-8. View を作成する
+8. >View を作成する
+    [routes/web.php](routes/web.php)
+    - `/` \
+        [GET] welcome / dashboard
+    - `/dashboard` \
+        [GET] dashboard
+    - `/stores` \
+        [POST] store.store \
+        - `/{id}` \
+            [GET] store.show \
+            [PUT] store.update \
+            [DELETE] store.destroy
+            - `/edit` \
+                [GET] store.edit
+            - `/favorite` \
+                [POST] store をお気に入りする
+            - `/unfavorite` \
+                [DELETE] store のお気に入りを外す
+    - [POST] /records
+        - [PUT,DELETE] /{id}
+            - [GET] /edit
+            - [PUSH] /favorite
+            - [DELETE] /unfavorite
+    - [PUSH] /prop_definitions
+        - [PUT,DELETE] /{id}
+
+9. 修正点洗い出し
+    - 必須
+    - [x] [全ページ] タイトルを修正
+    - [x] [Dashboard お気に入りStore] 作成者の表示
+    - [x] [Dashboard お気に入りStore] お気に入りボタンをホバーで表示
+    - [x] [Dashboard Store] 公開/非公開の表示
+    - [x] [Dashboard 他のユーザーのStore] 右パディングを小さく
+    - [x] [Dashboard] 見出し薄くてもよいのでは
+    - [x] [Navigation] 「お気に入り」「作成済み」カラー薄く
+    - [x] [Navigation] 新規作成ができるように
+    - [x] [Store.show] 罫線を横いっぱいに（最後の要素を伸ばす？）
+    - [x] [Store.edit] PropDefinition の横幅を小さく
+    - [x] [Store.edit] PropDefinition 新規のボタン横幅を大きく
+    - [x] [Store.edit Controller] PropDefinition 削除機能
+    - [x] [Store.edit] PropDefinition 下部に削除ボタン
+    - [x] [Record.show] Storeボタンのクリック部分修正・余白とる
+    
+    - 任意
+    - [x] [Store.show] お気に入りかどうか右上から確認できるように
+    - [ ] [新 APIの作成] API経由でデータを入れられるように
+    - [ ] [Store] APIを使ってデータを入れる
+    - [ ] [Record] 左にバーを付けて見た目を変える
+    - [ ] [Store.show] 表示形式をテーブル以外にできるようにする（投稿風等）
+    - [ ] [Store.show] フィルタリング・検索機能
+    - [ ] [Store.show] 色を付ける
+    - [ ] [Record.show] 編集者や最終更新日の情報を表示する
+

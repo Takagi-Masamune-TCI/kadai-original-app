@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\PropDefinition;
 use App\Models\Store;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class StoreController extends Controller
 {
@@ -73,7 +75,9 @@ class StoreController extends Controller
         // # 変更予定の値の取得
         $store = Store::findOrFail($id);
         $name = $request->input("name");
-        $is_public = $request->input("is_public") == "1";
+        $is_public = $request->input("is_public") == "on";
+        
+        Log::info("[Debug] $store->is_public -> $is_public");
 
         // # 値の変更
         // ## name の変更
@@ -95,11 +99,45 @@ class StoreController extends Controller
 
             $store->is_public = $is_public;
         }
+
+        // ## propDefinitions の変更
+        $propDefs = [];
+        // ### 新しい要素の作成・既存の要素の更新
+        foreach ($request->input("propDefinition_id") ?? [] as $i => $propId) {
+            $propName = $request->input("propDefinition_name")[$i];
+            if ($propId == "new") {
+                $index = $store->propDefinitions()->max("index") + 1;
+                $propDefs[] = $store->propDefinitions()->create([
+                    "name" => $propName,
+                    "index" => $index
+                ]);
+            } else {
+                $propDef = $store->propDefinitions()->findOrFail($propId);
+                $propDef->name = $propName;
+                $propDefs[] = $propDef;
+            }
+        }
+        // ### 指定されていない要素を削除
+        $store->propDefinitions()
+            ->whereNotIn("id", array_map(fn ($propDef) => $propDef->id, $propDefs))
+            ->delete();
+
+        // ### 適用可能な index を順に並べる
+        $indexes = array_map(fn ($propDef) => $propDef->index, $propDefs);
+        sort($indexes, SORT_NUMERIC);
+
+        
+        // ### 適用可能な index に、リクエスト順に割り当て、保存する
+        foreach ($propDefs ?? [] as $i => $propDef) {
+            // 前から順に小さい物からつけていく
+            $propDef->index = $indexes[$i];
+            $propDef->save();
+        }
         
         // ## 変更の保存
         $store->save();
 
-        return back();
+        return redirect("/stores/{$store->id}");
     }
 
 
@@ -121,15 +159,15 @@ class StoreController extends Controller
         return back();
     }
 
-    private function canAccess(int $userId, Store $store) 
+    private function canAccess(int|null $userId, Store $store) 
     {
         return $store->is_public || $store->created_by == $userId;
     }
 
     private function validateStoreRequest(Request $request) {
         $request->validate([
-            "name" => "required|max:255",
-            "is_public" => "nullable|boolean"
+            "name" => "max:255",
+            // "is_public" => "nullable|boolean"
         ]);
     }
 }

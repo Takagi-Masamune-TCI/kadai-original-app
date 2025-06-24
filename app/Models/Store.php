@@ -55,7 +55,7 @@ class Store extends Model
      */
     public function propDefinitions() 
     {
-        return $this->hasMany(PropDefinition::class);
+        return $this->hasMany(PropDefinition::class)->orderBy("index");
     }
 
     /**
@@ -63,7 +63,7 @@ class Store extends Model
      */
     public function records()
     {
-        return $this->hasMany(Record::class);
+        return $this->hasMany(Record::class)->orderBy("index");
     }
 
     /**

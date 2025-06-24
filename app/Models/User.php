@@ -108,14 +108,14 @@ class User extends Authenticatable
             ->orWhereIn("id", $favoriteStoreIds);
     }
 
-    public function isStoreFavorite(int $storeId)
+    public function isStoreFavorited(int $storeId)
     {
         return $this->favoriteStores()->where("store_id", $storeId)->exists();
     }
 
     public function favoriteStore(int $storeId)
     {
-        if ($this->isStoreFavorite($storeId)) {
+        if ($this->isStoreFavorited($storeId)) {
             return false;
         }
 
@@ -125,7 +125,7 @@ class User extends Authenticatable
 
     public function unfavoriteStore(int $storeId)
     {
-        if ($this->isStoreFavorite($storeId) == false) {
+        if ($this->isStoreFavorited($storeId) == false) {
             return false;
         }
 
@@ -133,14 +133,14 @@ class User extends Authenticatable
         return true;
     }
 
-    public function isRecordFavorite(int $recordId)
+    public function isRecordFavorited(int $recordId)
     {
         return $this->favoriteRecords()->where("record_id", $recordId)->exists();
     }
 
     public function favoriteRecord(int $recordId)
     {
-        if ($this->isRecordFavorite($recordId)) {
+        if ($this->isRecordFavorited($recordId)) {
             return false;
         }
 
@@ -150,11 +150,20 @@ class User extends Authenticatable
 
     public function unfavoriteRecord(int $recordId)
     {
-        if ($this->isRecordFavorite($recordId) == false) {
+        if ($this->isRecordFavorited($recordId) == false) {
             return false;
         }
 
         $this->favoriteRecords()->detach($recordId);
         return true;
+    }
+
+    public function foreignStoresFilter() 
+    {
+        $favoriteStoreIds = $this->favoriteStores()->pluck("store_id")->toArray();
+
+        return Store::where("created_by", "!=", $this->id)
+            ->where("is_public", true)
+            ->whereNotIn("id", $favoriteStoreIds);
     }
 }

@@ -1,100 +1,70 @@
-<nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
-    <!-- Primary Navigation Menu -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between h-16">
-            <div class="flex">
-                <!-- Logo -->
-                <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-gray-800" />
-                    </a>
-                </div>
+@php
+$userStores = \Auth::user()->usingStores()->get()->all();
+$favoriteStores = array_filter($userStores, fn ($store) => \Auth::user()->isStoreFavorited($store->id));
+$nonfavoriteStores = array_filter($userStores, fn ($store) => \Auth::user()->isStoreFavorited($store->id) == false);
+@endphp
 
-                <!-- Navigation Links -->
-                <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                        {{ __('Dashboard') }}
-                    </x-nav-link>
-                </div>
-            </div>
+<nav class="bg-white px-12 py-10 shadow-md shrink-0 flex flex-col justify-start">
+    <h1 class="text-4xl font-bold">
+        <a class="py-2" href="/">LifeStore</a>
+    </h1>
+    <div class="mt-20">
+        <h2 class="text-lg border-b border-solid border-gray-200">
+            <a href="/dashboard">
+                Stores
+            </a>
+        </h2>
 
-            <!-- Settings Dropdown -->
-            <div class="hidden sm:flex sm:items-center sm:ms-6">
-                <x-dropdown align="right" width="48">
-                    <x-slot name="trigger">
-                        <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
-                            <div>{{ Auth::user()->name }}</div>
-
-                            <div class="ms-1">
-                                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </div>
-                        </button>
-                    </x-slot>
-
-                    <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
-                            {{ __('Profile') }}
-                        </x-dropdown-link>
-
-                        <!-- Authentication -->
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-
-                            <x-dropdown-link :href="route('logout')"
-                                    onclick="event.preventDefault();
-                                                this.closest('form').submit();">
-                                {{ __('Log Out') }}
-                            </x-dropdown-link>
-                        </form>
-                    </x-slot>
-                </x-dropdown>
-            </div>
-
-            <!-- Hamburger -->
-            <div class="-me-2 flex items-center sm:hidden">
-                <button @click="open = ! open" class="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:bg-gray-100 focus:text-gray-500 transition duration-150 ease-in-out">
-                    <svg class="h-6 w-6" stroke="currentColor" fill="none" viewBox="0 0 24 24">
-                        <path :class="{'hidden': open, 'inline-flex': ! open }" class="inline-flex" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-                        <path :class="{'hidden': ! open, 'inline-flex': open }" class="hidden" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+        <h3 class="mt-6 mb-4 text-xs font-bold text-gray-500">お気に入り</h3>
+        
+        @if(isset($favoriteStores) && count($favoriteStores) > 0)
+            @foreach($favoriteStores as $store)
+                <a href="{{ route("stores.show", $store->id) }}" 
+                    class="my-3 py-2 px-0 rounded-lg hover:bg-gray-100 block border-l-0 border-solid border-gray-500 transition-all hover:px-2 {{ 
+                        request()->routeIs("stores.show", "stores.edit") && Route::current()->parameters['store'] == $store->id 
+                            ? "border-l-4 px-2 bg-white rounded-lg shadow-md font-bold text-gray-600" : "" 
+                    }}">
+                    {{ $store->name }}
+                </a>
+            @endforeach
+        @else
+            <p class="my-4 text-sm text-gray-500">よく使う Store をお気に入りしてみましょう</p>
+        @endif
+        
+        <div class="group mt-10 mb-6 flex justify-between items-center">
+            <h3 class="text-xs font-bold text-gray-500">作成済み</h3>
+            <form method="POST" action="{{ route("stores.store") }}">
+                @csrf
+                
+                <input type="hidden" name="name" value="new">
+                <button type="submit" class="relative h-6 w-6 rounded text-gray-500 opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100 hover:bg-gray-100 focus:bg-gray-100 hover:scale-105 focus:scale-105 active:scale-95">
+                    <span class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">+</span>
                 </button>
-            </div>
+            </form>
         </div>
+        @if(isset($nonfavoriteStores) && count($nonfavoriteStores) > 0)
+            @foreach($nonfavoriteStores as $store)
+                <a href="{{ route("stores.show", $store->id) }}" 
+                    class="my-3 py-2 px-0 rounded-lg hover:bg-gray-100 block border-l-0 border-solid border-gray-500 transition-all hover:px-2 {{ 
+                        request()->routeIs("stores.show", "stores.edit") && Route::current()->parameters['store'] == $store->id 
+                            ? "border-l-4 px-2 bg-white rounded-lg shadow-md font-bold text-gray-600" : "" 
+                        }}">
+                    {{ $store->name }}
+                </a>
+            @endforeach
+        @else
+            <p class="my-4 text-sm text-gray-500">Store を作成しましょう</p>
+        @endif
+        
     </div>
 
-    <!-- Responsive Navigation Menu -->
-    <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
-            <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
-                {{ __('Dashboard') }}
-            </x-responsive-nav-link>
-        </div>
-
-        <!-- Responsive Settings Options -->
-        <div class="pt-4 pb-1 border-t border-gray-200">
-            <div class="px-4">
-                <div class="font-medium text-base text-gray-800">{{ Auth::user()->name }}</div>
-                <div class="font-medium text-sm text-gray-500">{{ Auth::user()->email }}</div>
-            </div>
-
-            <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
-                    {{ __('Profile') }}
-                </x-responsive-nav-link>
-
-                <!-- Authentication -->
-                <form method="POST" action="{{ route('logout') }}">
-                    @csrf
-
-                    <x-responsive-nav-link :href="route('logout')"
-                            onclick="event.preventDefault();
-                                        this.closest('form').submit();">
-                        {{ __('Log Out') }}
-                    </x-responsive-nav-link>
-                </form>
-            </div>
-        </div>
+    <div class="justify-self-end mt-auto">
+        <p class="mb-2 text-lg">{{ \Auth::user()->name }}</p>
+        <form method="POST" action="{{ route("logout") }}">
+            @csrf
+            <button type="submit" class="text-sm rounded-full px-2 py-0.5 hover:bg-red-200 hover:text-red-600 focus:bg-red-200 focus:tesxt-red-600">
+                ログアウト
+            </button>
+        </form>
     </div>
 </nav>

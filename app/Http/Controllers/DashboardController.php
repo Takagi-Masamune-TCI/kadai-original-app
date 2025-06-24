@@ -16,10 +16,12 @@ class DashboardController extends Controller
             // ログイン済みユーザー
             $user = \Auth::user();
             $stores = $user->usingStores();
+            $foreignStores = $user->foreignStoresFilter()->get();
 
             $data = [
                 "user" => $user,
-                "stores" => $stores
+                "stores" => $stores,
+                "foreignStores" => $foreignStores
             ];
         }
 

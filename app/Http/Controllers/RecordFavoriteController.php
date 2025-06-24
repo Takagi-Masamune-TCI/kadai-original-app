@@ -14,6 +14,8 @@ class RecordFavoriteController extends Controller
     {
         $user = \Auth::user();
         $user->favoriteRecord(intval($id));
+
+        return back();
     }
 
 
@@ -24,5 +26,7 @@ class RecordFavoriteController extends Controller
     {
         $user = \Auth::user();
         $user->unfavoriteRecord(intval($id));
+
+        return back();
     }
 }

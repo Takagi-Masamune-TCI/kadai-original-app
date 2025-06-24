@@ -13,6 +13,8 @@ class StoreFavoriteController extends Controller
     {
         $user = \Auth::user();
         $user->favoriteStore(intval($id));
+        
+        return back();
     }
 
 
@@ -23,5 +25,7 @@ class StoreFavoriteController extends Controller
     {
         $user = \Auth::user();
         $user->unfavoriteStore(intval($id));
+        
+        return back();
     }
 }
