@@ -8,7 +8,7 @@ $nonfavoriteStores = array_filter($userStores, fn ($store) => \Auth::user()->isS
     <h1 class="text-4xl font-bold">
         <a class="py-2" href="/">LifeStore</a>
     </h1>
-    <div class="mt-20">
+    <div class="mt-20 shrink overflow-y-auto -mx-4 px-4 py-2">
         <h2 class="text-lg border-b border-solid border-gray-200">
             <a href="/dashboard">
                 Stores
@@ -59,7 +59,7 @@ $nonfavoriteStores = array_filter($userStores, fn ($store) => \Auth::user()->isS
     </div>
 
     <div class="justify-self-end mt-auto">
-        <p class="mb-2 text-lg">{{ \Auth::user()->name }}</p>
+        <a href="{{ route("profile.show") }}" class="mb-2 text-lg">{{ \Auth::user()->name }}</a>
         <form method="POST" action="{{ route("logout") }}">
             @csrf
             <button type="submit" class="text-sm rounded-full px-2 py-0.5 hover:bg-red-200 hover:text-red-600 focus:bg-red-200 focus:tesxt-red-600">

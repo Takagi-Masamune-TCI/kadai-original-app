@@ -21,7 +21,7 @@
             @include('layouts.navigation')
 
             <!-- Page Content -->
-            <main class="py-12 px-10 grow min-w-[500px] bg-gray-100">
+            <main class="py-12 px-10 grow min-w-[500px] h-screen overflow-y-auto bg-gray-100">
                 @yield("contents")
             </main>
         </div>

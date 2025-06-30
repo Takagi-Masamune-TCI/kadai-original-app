@@ -60,7 +60,7 @@ User >o--o< Post : "favorite"
             }
             ```
     3. **sail bash >** `npm run build`
-5. >モデルを用意する
+5. モデルを用意する
     1. User モデルを用意する
         1. ~~users テーブルを作成する~~
         2. User モデルを修正する
@@ -214,11 +214,71 @@ User >o--o< Post : "favorite"
     
     - 任意
     - [x] [Store.show] お気に入りかどうか右上から確認できるように
-    - [ ] [新 APIの作成] API経由でデータを入れられるように
-    - [ ] [Store] APIを使ってデータを入れる
-    - [ ] [Record] 左にバーを付けて見た目を変える
-    - [ ] [Store.show] 表示形式をテーブル以外にできるようにする（投稿風等）
-    - [ ] [Store.show] フィルタリング・検索機能
-    - [ ] [Store.show] 色を付ける
-    - [ ] [Record.show] 編集者や最終更新日の情報を表示する
+
+10. ユーザーグループ拡張
+    1. モデルを用意する
+        1. UserGroup モデルを用意する
+            1. user_groups テーブルを作成する
+                1. `sudo ./vendor/bin/sail artisan make:migration create_table_user_groups --create=user_groups`
+                2. [create_table_user_groups](database/migrations/2025_06_24_054110_create_table_user_groups.php)
+            2. UserGroup モデルを作成する
+                1. `sudo ./vendor/bin/sail artisan make:model UserGroup`
+                2. [app/Models/UserGroup.php](app/Models/UserGroup.php)
+        2. UserBlonging 中間テーブルを用意する
+            1. user_belongings テーブルを作成する
+                1. `sudo ./vendor/bin/sail artisan make:migration create_table_user_belongings --create=user_belongings`
+                2. [create_table_user_belongings](database/migrations/2025_06_24_054149_create_table_user_belongings.php)
+        3. UserGroupStorePermission 中間テーブルを用意する
+            1. user_group_store_permissions テーブルを作成する
+                1. `sudo ./vendor/bin/sail artisan make:migration create_table_user_group_store_permissions --create=user_group_store_permissions`
+                2. [create_table_user_group_store_permissions]
+                (database/migrations/2025_06_24_054203_create_table_user_group_store_permissions.php)
+        4. マイグレーションを実行する \
+            `sudo ./vendor/bin/sail artisan migrate`
+        5. モデルを修正する
+            - UserGroup
+                - function users()
+                - function accessPermittedStores()
+                - function owners()
+                - function createdBy()
+            - User
+                - function groups()
+                - function accessPermittedStores()
+                - // function ownedGroups()
+                - // function createdGroups()
+            - Store
+                - function userGroups()
+    2. Controller を用意する
+        1. UserGroupController を用意する\
+            `sudo ./vendor/bin/sail artisan make:controller UserGroupController`
+            [UserGroupController.php](app/Http/Controllers/UserGroupController.php)
+            - store
+            - show
+            - edit
+            - update
+            - destroy
+        2. UserBelongingController を用意する\
+            `sudo ./vendor/bin/sail artisan make:controller UserBelongingController`
+            [UserBelongingController.php](app/Http/Controllers/UserBelongingController.php)
+            - store     // グループにユーザーを追加
+            - update    // オーナー権限の付与/剥奪
+            - destroy   // グループからユーザーを削除
+        3. UserGroupStorePermissionController を用意する\
+            `sudo ./vendor/bin/sail artisan make:controller UserGroupStorePermissionController`
+            [UserBelongingController.php](app/Http/Controllers/UserBelongingController.php)
+            - store     // アクセスを付与
+            - destroy   // アクセスを剥奪
+        
+
+
+
+## 修正点残り
+
+- [ ] [新 APIの作成] API経由でデータを入れられるように
+- [ ] [Store] APIを使ってデータを入れる
+- [ ] [Record] 左にバーを付けて見た目を変える
+- [ ] [Store.show] 表示形式をテーブル以外にできるようにする（投稿風等）
+- [ ] [Store.show] フィルタリング・検索機能
+- [ ] [Store.show] 色を付ける
+- [ ] [Record.show] 編集者や最終更新日の情報を表示する
 

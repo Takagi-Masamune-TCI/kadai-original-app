@@ -25,7 +25,8 @@ trait IndexManager
      * @return void
      */
     protected function reindexForRemoveFrom(Builder|HasMany $list, int $index) {
-        $list->where("index", ">=", $index)
+        // 削除予定の自身の index は動かさない
+        $list->where("index", ">", $index)
             ->decrement("index");
     }
 

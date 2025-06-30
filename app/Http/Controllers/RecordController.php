@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Store;
 use App\Models\Record;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -28,9 +29,13 @@ class RecordController extends Controller
         $storeId = $request->input("store_id");
         $store = Store::find($storeId);
 
-        if ($this->canAccessToStore(\Auth::id(), $store) == false) {
-            return back()
-                ->with("Auth Fail", "この Store に対するレコードの作成権限がありません");
+        if ($this->canAccessToStore(\Auth::user(), $store) == false) {
+            if (\Auth::check()) {
+                return back()
+                    ->with("Auth Fail", "この Store に対するレコードの作成権限がありません");
+            } else {
+                return redirect("login");
+            }
         }
 
         // ## index の更新処理を行う
@@ -60,7 +65,7 @@ class RecordController extends Controller
         $record = Record::findOrFail($id);
 
         // # 編集可能か確認
-        if ($this->canAccess(\Auth::id(), $record) == false) {
+        if ($this->canAccess(\Auth::user(), $record) == false) {
             return back()
                 ->with("Auth Fail", "表示権限がありません");
         }
@@ -102,9 +107,13 @@ class RecordController extends Controller
         Log::info("index: " . isset($index) . " " . $record->index . " -> " . $index);
         if (isset($index) && $index != $record->index) {
             // 並び替えにはそのレコードへアクセスできる必要がある
-            if ($this->canAccess(\Auth::id(), $record) == false) {
-                return back()
-                    ->with("Auth Fail", "編集権限がありません");
+            if ($this->canAccess(\Auth::user(), $record) == false) {
+                if (\Auth::check()) {
+                    return back()
+                        ->with("Auth Fail", "編集権限がありません");
+                } else {
+                    return redirect("login");
+                }
             }
             $this->reindexForReplace($store->records(), $record->index, $index);
             $record->index = $index;
@@ -172,8 +181,12 @@ class RecordController extends Controller
 
         // # 削除可能か確認（作成者のみ削除可能）
         if ($record->created_by != \Auth::id()) {
-            return back()
-                ->with("Auth Fail", "削除権限がありません");
+            if (\Auth::check()) {
+                return back()
+                    ->with("Auth Fail", "削除権限がありません");
+            } else {
+                return redirect("login");
+            }
         }
 
         // # 他の record の index を変更
@@ -192,9 +205,9 @@ class RecordController extends Controller
         ]);
     }
 
-    private function canAccess(int $userId, Record $record)
+    private function canAccess(User|null $user, Record $record)
     {
         $store = $record->store()->first();
-        return $this->canAccessToStore($userId, $store);
+        return $this->canAccessToStore($user, $store);
     }
 }

@@ -41,29 +41,44 @@
                 <p class="text-xs text-gray-500 font-bold">Store</p>
                 <h2 class="font-bold text-4xl">{{ $store->name }}</h2>
                 @if ($store->is_public)
-                    <div class="mt-2 pl-4 pr-6 py-0.5 w-fit flex items-center gap-2 rounded-full bg-green-100 text-gray-600">
+                    <div class="mt-2 pl-4 pr-6 py-0.5 w-fit flex items-center gap-2 rounded-full bg-green-100">
                         <div class="w-2 h-2 rounded-full bg-green-500 ring ring-green-200"></div>
                         <p class="text-green-600">公開中</p>
                     </div>
-                    @else 
+                @else 
                     <div class="mt-2 pl-4 pr-6 py-0.5 w-fit flex items-center gap-2 rounded-full bg-gray-200">
                         <div class="w-2 h-2 rounded-full bg-gray-400 ring ring-gray-200"></div>
                         <p class="text-gray-800">非公開</p>
                     </div>
                 @endif
+                <div class="mt-4">
+                    <h3 class="text-sm text-gray-500">
+                        アクセス可能な UserGroup：
+                        @if (count($store->userGroups) == 0)
+                            <span class="text-gray-500">なし</span>
+                        @endif
+                    </h3>
+                    <div class="mt-1 flex gap-1">
+                        @foreach ($store->userGroups as $userGroup)
+                            <a href="{{ route("user_groups.show", $userGroup->id) }}" class="pl-2 pr-4 py-0.5 w-fit flex items-center gap-2 rounded-full text-gray-800 transition hover:bg-cyan-100 hover:text-cyan-800">
+                                <div class="w-2 h-2 rounded-full bg-cyan-500 ring ring-cyan-200"></div>
+                                <p class="text-inherit">{{ $userGroup->name }}</p>
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
             </div>
             <a href="{{ route("stores.edit", $store->id) }}">編集</a>
         </div>
 
         <!-- テーブル -->
-        <div class="mt-2 py-8 overflow-x-auto grow overflow-y-auto">
-            <table>
-                <thead>
-                    <tr class="border-solid border-b-2 border-gray-300">
-                        <td class="min-w-20 px-4 py-2 text-gray-500">id</td>
-                        <td></td>
+        <div class="mt-4 overflow-x-auto grow overflow-y-auto">
+            <table class="border-separate border-spacing-0">
+                <thead class="sticky top-0 left-0 right-0 pt-2 bg-white/50 backdrop-blur">
+                    <tr class="">
+                        <td class="min-w-20 px-4 py-2 text-gray-500 border-solid border-b-2 border-gray-300" colspan="2">id</td>
                         @foreach($store->propDefinitions as $propDefinition)
-                            <td class="min-w-32 pl-4 pr-8 py-2 text-nowrap text-gray-500 last:w-full">{{ $propDefinition->name }}</td>
+                            <td class="min-w-32 pl-4 pr-8 py-2 text-nowrap text-gray-500 last:w-full border-solid border-b-2 border-gray-300">{{ $propDefinition->name }}</td>
                         @endforeach
                     </tr>
                 </thead>
@@ -72,14 +87,14 @@
                         $store_records = $store->records()->orderBy("index")->get()
                     @endphp
                     @foreach($store_records as $i => $record)
-                        <tr class="group border-solid border-b border-gray-300 transition hover:bg-gray-100 focus-within:bg-gray-100" data-index="{{ $record->index }}">
+                        <tr class="group transition hover:bg-gray-100 focus-within:bg-gray-100" data-index="{{ $record->index }}">
                             <!-- ID部分 -->
-                            <th class="py-2 font-normal">
+                            <th class="py-2 font-normal border-solid border-b border-gray-300">
                                 <a href="{{ route("records.edit", $record->id) }}" class="px-4 py-2 rounded-lg bg-white transition group-hover:shadow-md group-focus-within:shadow-md">
                                     <span class="text-sm text-gray-600 mr-1">#</span>{{ $record->id }}
                                 </a>
                             </th>
-                            <td class="py-2 pr-2">
+                            <td class="py-2 pr-2 border-solid border-b border-gray-300">
                                 <div class="h-full flex gap-2 items-center">
                                     <!-- お気に入り -->
                                     @if(\Auth::user()->isRecordFavorited($record->id))
@@ -141,7 +156,9 @@
                             </td>
                             <!-- 値部分 -->
                             @foreach($store->propDefinitions as $propDefinition)
-                                <td class="px-4 pl-4 pr-8 text-nowrap">{!! nl2br(e($record->props->where("id", $propDefinition->id)->first()?->pivot->value)) !!}</td>
+                                <td class="px-4 pl-4 pr-8 text-nowrap  border-solid border-b border-gray-300">
+                                    {!! nl2br(e($record->props->where("id", $propDefinition->id)->first()?->pivot->value)) !!}
+                                </td>
                             @endforeach
                         </tr>
                     @endforeach

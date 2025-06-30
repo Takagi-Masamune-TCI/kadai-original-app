@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserBelongingController;
+use App\Http\Controllers\UserGroupController;
 use App\Models\PropDefinition;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StoreController;
@@ -55,10 +57,23 @@ Route::group([["middleware" => "auth"]], function () {
 
     // propDefinition へのリクエストをルーティング
     Route::resource("prop_definitions", PropDefinitionController::class, ["only" => ["store", "update", "destroy"]]);
+
+    // UserGroup へのリクエストをルーティング
+    Route::resource("user_groups", UserGroupController::class, ["only" => ["store", "show", "edit", "update", "destroy"]]);
+    
+    // user_group へのその他の操作をルーティング
+    Route::prefix("user_groups/{id}")->group(function () {
+        // user_group をお気に入りへ追加/削除
+        Route::post('members', [UserBelongingController::class, "store"])->name("user_groups.members");
+        Route::put('members', [UserBelongingController::class, "update"])->name("user_groups.members");
+        Route::delete('members', [UserBelongingController::class, "destroy"])->name("user_groups.members");
+    });
+
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile', [ProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });

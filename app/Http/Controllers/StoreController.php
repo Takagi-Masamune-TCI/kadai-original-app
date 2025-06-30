@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\PropDefinition;
 use App\Models\Store;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -15,10 +16,23 @@ class StoreController extends Controller
     public function show(string $id) {
         $store = Store::findOrFail($id);
 
-        if ($this->canAccess(\Auth::id(), $store) == false) {
-            return back()
+        if ($this->canAccess(\Auth::user(), $store) == false) {
+            Log::info("access denied");
+            if (\Auth::check()) {
+                return back()
                 ->with("Auth Fail", "表示権限がありません");
+            } else {
+                return redirect("login");
+            }
         }
+        // Log::info("access passed from " . \Auth::user()->name);
+        // $user = \Auth::user();
+        // Log::info("store:", $store->toArray());
+        // Log::info("accessible stores:", $user->accessibleStores()->pluck("name")->toArray());
+        // Log::info("accessible stores:", $user->accessibleStores()->pluck("stores.id")->toArray());
+        // Log::info("accessible stores filter:", $user->accessibleStores()->where("stores.id", $store->id)->pluck("name")->toArray());
+        // Log::info("access passed from " . $store->is_public . " / " . isset($user) . " && " . ($user->accessibleStores()->where("stores.id", "=",$store->id)->exists()));
+        
 
         return view("stores.show", [
             "store" => $store
@@ -39,7 +53,7 @@ class StoreController extends Controller
             "is_public" => $request->input("is_public") == '1'
         ]);
 
-        return back();
+        return redirect()->route("stores.show", $store->id);
     }
 
     
@@ -52,9 +66,13 @@ class StoreController extends Controller
         $store = Store::findOrFail($id);
 
         // # 編集可能か確認
-        if ($this->canAccess(\Auth::id(), $store) == false) {
-            return back()
+        if ($this->canAccess(\Auth::user(), $store) == false) {
+            if (\Auth::check()) {
+                return back()
                 ->with("Auth Fail", "表示権限がありません");
+            } else {
+                return redirect("login");
+            }
         }
         
         // # view を返す
@@ -82,9 +100,13 @@ class StoreController extends Controller
         // # 値の変更
         // ## name の変更
         if ($store->name != $name) {
-            if ($this->canAccess(\Auth::id(), $store) == false) {
-                return back()
+            if ($this->canAccess(\Auth::user(), $store) == false) {
+                if (\Auth::check()) {
+                    return back()
                     ->with("Auth Fail", "編集権限がありません");
+                } else {
+                    return redirect("login");
+                }
             }
             
             $store->name = $name;
@@ -99,9 +121,13 @@ class StoreController extends Controller
 
             $store->is_public = $is_public;
         }
+        
+        // ## 変更の保存
+        $store->save();
 
         // ## propDefinitions の変更
         $propDefs = [];
+
         // ### 新しい要素の作成・既存の要素の更新
         foreach ($request->input("propDefinition_id") ?? [] as $i => $propId) {
             $propName = $request->input("propDefinition_name")[$i];
@@ -133,9 +159,9 @@ class StoreController extends Controller
             $propDef->index = $indexes[$i];
             $propDef->save();
         }
-        
-        // ## 変更の保存
-        $store->save();
+
+        // ## アクセス可能な UserGroup の変更
+        $store->userGroups()->sync($request->input("userGroupIds") ?? []);
 
         return redirect("/stores/{$store->id}");
     }
@@ -159,9 +185,10 @@ class StoreController extends Controller
         return back();
     }
 
-    private function canAccess(int|null $userId, Store $store) 
+    public static function canAccess(User|null $user, Store $store) 
     {
-        return $store->is_public || $store->created_by == $userId;
+        return $store->is_public 
+            || (isset($user) && $user->accessibleStores()->where("stores.id", $store->id)->exists());
     }
 
     private function validateStoreRequest(Request $request) {

@@ -74,5 +74,10 @@ class Store extends Model
         return $this->belongsToMany(User::class, 'store_favorites');
     }
 
+    public function userGroups()
+    {
+        return $this->belongsToMany(UserGroup::class, "user_group_store_permissions");
+    }
+
     // loadRelationshipCount を見直す
 }

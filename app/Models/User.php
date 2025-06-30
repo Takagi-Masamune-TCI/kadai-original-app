@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -165,5 +166,56 @@ class User extends Authenticatable
         return Store::where("created_by", "!=", $this->id)
             ->where("is_public", true)
             ->whereNotIn("id", $favoriteStoreIds);
+    }
+
+    public function groups()
+    {
+        // user_belongings テーブルでは User は user_id, UserGroup は user_group_id で表されるため省略。
+        return $this->belongsToMany(UserGroup::class, "user_belongings");
+    }
+
+    public function createdGroups()
+    {
+        return $this->hasMany(UserGroup::class, "created_by");
+    }
+
+    public function ownedGroups()
+    {
+        return $this->groups()->where("is_owner", true);
+    }
+
+    public function isOwnerOf(string $groupId)
+    {
+        return $this->ownedGroups()->where("user_group_id", $groupId)->exists();
+    }
+
+    /**
+     * 所属するグループのアクセスが許可された Store
+     */
+    public function accessPermittedStores()
+    {
+        return Store::whereIn("stores.id", fn ($query) => 
+            $query->select("store_id")
+                ->from("user_group_store_permissions")
+                ->whereIn("user_group_id", $this->groups()->pluck("user_groups.id")->toArray())
+        );
+    }
+
+    /**
+     * アクセス可能なすべての Store
+     */
+    public function accessibleStores()
+    {
+        return Store::
+            // 自身が作成した Store
+            where("created_by", $this->id)
+            // 公開設定の Store
+            ->orWhere("is_public", true)
+            // 所属する UserGroup からのアクセスが許可されている Store
+            ->orWhereIn("stores.id", fn ($query) => 
+                $query->select("store_id")   
+                ->from("user_group_store_permissions")
+                ->whereIn("user_group_id", $this->groups()->pluck("user_groups.id")->toArray())
+        );
     }
 }

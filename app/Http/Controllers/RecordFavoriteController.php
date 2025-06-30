@@ -10,9 +10,9 @@ class RecordFavoriteController extends Controller
     /**
      * [POST] /records/{id}/favorite
      */
-    public function store(string $id)
+    public function store(Request $request, string $id)
     {
-        $user = \Auth::user();
+        $user = $request->user();
         $user->favoriteRecord(intval($id));
 
         return back();
@@ -22,9 +22,9 @@ class RecordFavoriteController extends Controller
     /**
      * [DELETE] /records/{id}/unfavorite
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $user = \Auth::user();
+        $user = $request->user();
         $user->unfavoriteRecord(intval($id));
 
         return back();

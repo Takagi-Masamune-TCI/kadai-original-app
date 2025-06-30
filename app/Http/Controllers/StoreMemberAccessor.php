@@ -3,11 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Store;
+use App\Models\User;
 
 trait StoreMemberAccessor
 {
-    protected function canAccessToStore(int $userId, Store $store)
+    protected function canAccessToStore(User|null $user, Store $store)
     {
-        return $store->is_public || $store->created_by == $userId;
+        return StoreController::canAccess($user, $store);
     }
 }

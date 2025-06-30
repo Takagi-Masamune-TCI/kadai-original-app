@@ -9,9 +9,9 @@ class StoreFavoriteController extends Controller
     /**
      * [POST] /stores/{id}/favorite
      */
-    public function store(string $id)
+    public function store(Request $request, string $id)
     {
-        $user = \Auth::user();
+        $user = $request->user();
         $user->favoriteStore(intval($id));
         
         return back();
@@ -21,9 +21,9 @@ class StoreFavoriteController extends Controller
     /**
      * [DELETE] /stores/{id}/unfavorite
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $user = \Auth::user();
+        $user = $request->user();
         $user->unfavoriteStore(intval($id));
         
         return back();
